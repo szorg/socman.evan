@@ -29,7 +29,7 @@ sub windisplay {
     $window->signal_connect (delete_event => sub { Gtk3->main_quit });
     
     my $button1 = Gtk3::Button->new("Quit");
-    $button1->signal_connect (clicked => \&quit_function);
+    $button1->signal_connect (clicked => \&quitFunction);
 
     my $button2 = Gtk3::Button->new("Create Table");
     $button2->signal_connect (clicked => \&tableCreate);
@@ -67,7 +67,7 @@ sub windisplay {
 
 }
 
-sub quit_function {
+sub quitFunction {
 #    say "Exiting...";
     Gtk3->main_quit;
     return FALSE;
@@ -115,12 +115,11 @@ sub tablePrint {
     $sth->bind_col(4, \$col4);
     $sth->bind_col(5, \$col5);
     while ($sth->fetch) {
-        if ($col1 >= 1) {
-            $label->set_label( "Street: $col2, City: $col3, State: $col4, Zip: $col5" );
-        } else {
-            $label->set_label( "Nothing in table." );
-        }   
+        $label->set_label( "Street: $col2, City: $col3, State: $col4, Zip: $col5" );
     }
+    if (!$col1){
+    $label->set_label( "Nothing in table." );
+    }   
     return TRUE;
 }
 # hello
