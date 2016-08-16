@@ -114,18 +114,16 @@ sub tablePrint {
     $sth->bind_col(3, \$col3);
     $sth->bind_col(4, \$col4);
     $sth->bind_col(5, \$col5);
-    if ($col1 ne "") {
-        while ($sth->fetch) {
+    while ($sth->fetch) {
+        if ($col1 >= 1) {
             $label->set_label( "Street: $col2, City: $col3, State: $col4, Zip: $col5" );
-        }
+        } else {
+            $label->set_label( "Nothing in table." );
+        }   
     }
-    else {
-        $label->set_label( "Nothing in table." );
-    }
-
-    #$label->set_label( $exec );
     return TRUE;
 }
+# hello
 
 # Address Insert Subroutine
 # lpX = local param #X)
