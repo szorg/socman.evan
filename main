@@ -74,17 +74,43 @@ sub quitFunction {
 }
 
 sub tableCreate {
-    my $sql = qq/CREATE TABLE `Address` (
-    `addrID`        int(11)         NOT NULL    auto_increment,
-    `addrStreet`    varchar(50)     NOT NULL    default '',
-    `addrCity`      varchar(25)     NOT NULL    default '',
-    `addrState`     char(2)         NOT NULL    default '',
-    `addrZIP`       char(10)        NOT NULL    default '',
-    PRIMARY KEY (`addrID`)
-);/;
-    my $sth = $dbh->prepare($sql);
-    $sth->execute;
-    $label->set_label( "Table created" );
+    sub tableCreateLocale {
+        my $sql = qq/CREATE TABLE `Locale` (
+        `varID`         int(11)         NOT NULL    auto_increment,
+        `varName`       varchar(50)     NOT NULL    default '',
+        `varDefMod`     int(2)          NOT NULL    default '',
+        `varOffMod`     int(2)          NOT NULL    default '',
+        `varMidMod`     int(2)          NOT NULL    default '',
+        `varGKMod`      int(2)          NOT NULL    default '',
+        PRIMARY KEY (`varID`)
+        );/;
+        my $sth = $dbh->prepare($sql);
+        $sth->execute;
+    }
+    sub tableCreatePlayers {
+        my $sql = qq/CREATE TABLE `Players` (
+        `varID`         int(11)         NOT NULL    auto_increment,
+        `varName`       varchar(25)     NOT NULL    default '',
+        `varDef`        int(3)          NOT NULL    default 0,
+        `varOff`        int(3)          NOT NULL    default 0,
+        `varMid`        int(3)          NOT NULL    default 0,
+        `varGK`         int(3)          NOT NULL    default 0,
+        );/;
+        my $sth = $dbh->prepare($sql);
+        $sth->execute;
+    }
+    sub tableCreateTeams {
+        my $sql = qq/CREATE TABLE `Teams` (
+        `varID`         int(11)         NOT NULL    auto_increment,
+        `varName`       varchar(25)     NOT NULL    default '',
+        `varP0`         int(11)         NOT NULL    default 0,
+        `varP1`         int(11)         NOT NULL    default 0,
+        `varP2`         int(11)         NOT NULL    default 0,
+        `varP3`         int(11)         NOT NULL    default 0,
+        my $sth = $dbh->prepare($sql);
+        $sth->execute;
+    }
+    $label->set_label( "Tables created" );
     return TRUE;
 }
 
@@ -97,7 +123,7 @@ sub tableLineCreate {
 }
 
 sub tableDrop {
-    my $sql = qq/DROP TABLE Address;/;
+    my $sql = qq/DROP TABLE IF EXISTS Locale, Players, Teams;/;
     my $sth = $dbh->prepare($sql);
     $sth->execute();
     tableCreate();
