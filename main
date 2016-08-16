@@ -17,6 +17,7 @@ my $dbh = DBI->connect('DBI:mysql:db_dev0:localhost','dbdev','dbdev');
 # label var
 my $label = "var label not set";
 
+
 windisplay();
 
 sub windisplay {
@@ -41,7 +42,7 @@ sub windisplay {
     $button4->signal_connect (clicked => \&tableDrop);
 
     my $button5 = Gtk3::Button->new("Get Table");
-    $button5->signal_connect (clicked => \&tablePrint);
+    $button5->signal_connect (clicked => \&tablePrint, "Players");
 
     my $hbox = Gtk3::Box->new("horizontal", 5);
     $hbox->set_homogeneous (TRUE);
@@ -78,10 +79,10 @@ sub tableCreate {
         my $sql = qq/CREATE TABLE `Locale` (
         `varID`         int(11)         NOT NULL    auto_increment,
         `varName`       varchar(50)     NOT NULL    default '',
-        `varDefMod`     int(2)          NOT NULL    default '',
-        `varOffMod`     int(2)          NOT NULL    default '',
-        `varMidMod`     int(2)          NOT NULL    default '',
-        `varGKMod`      int(2)          NOT NULL    default '',
+        `varDefMod`     int(2)          NOT NULL    default 0,
+        `varOffMod`     int(2)          NOT NULL    default 0,
+        `varMidMod`     int(2)          NOT NULL    default 0,
+        `varGKMod`      int(2)          NOT NULL    default 0,
         PRIMARY KEY (`varID`)
         );/;
         my $sth = $dbh->prepare($sql);
@@ -91,10 +92,12 @@ sub tableCreate {
         my $sql = qq/CREATE TABLE `Players` (
         `varID`         int(11)         NOT NULL    auto_increment,
         `varName`       varchar(25)     NOT NULL    default '',
+        `varHome`       int(11)         NOT NULL    default 0,
         `varDef`        int(3)          NOT NULL    default 0,
         `varOff`        int(3)          NOT NULL    default 0,
         `varMid`        int(3)          NOT NULL    default 0,
         `varGK`         int(3)          NOT NULL    default 0,
+        PRIMARY KEY (`varID`)
         );/;
         my $sth = $dbh->prepare($sql);
         $sth->execute;
@@ -103,36 +106,55 @@ sub tableCreate {
         my $sql = qq/CREATE TABLE `Teams` (
         `varID`         int(11)         NOT NULL    auto_increment,
         `varName`       varchar(25)     NOT NULL    default '',
+        `varHome`       int(11)         NOT NULL    default 0,
         `varP0`         int(11)         NOT NULL    default 0,
         `varP1`         int(11)         NOT NULL    default 0,
         `varP2`         int(11)         NOT NULL    default 0,
         `varP3`         int(11)         NOT NULL    default 0,
+        PRIMARY KEY (`varID`)
+        );/;
         my $sth = $dbh->prepare($sql);
         $sth->execute;
     }
+    tableCreateLocale();
+    tableCreatePlayers();
+    tableCreateTeams();
     $label->set_label( "Tables created" );
     return TRUE;
 }
 
 sub tableLineCreate {
-    my $sql = qq/INSERT INTO Address (addrStreet, addrCity, addrState, addrZip) 
-        values ("Lane", "Columbus", "OH", "43221");/;
+    my $sql = qq/INSERT INTO Locale (varName, varDefMod, varOffMod, varMidMod, varGKMod)
+        values ("Columbus", 4, 3, 2, 2);/;
     my $sth = $dbh->prepare($sql);
     $sth->execute();
-    $label->set_label( "Created basic address" );
+    my $sql = qq/INSERT INTO Players (varName, varHome, varDef, varOff, varMid, varGK)
+        values ("George", 1, 4, 3, 2, 4);/;
+    my $sth = $dbh->prepare($sql);
+    $sth->execute();
+    my $sql = qq/INSERT INTO Teams (varName, varHome, varP0, varP1, varP2, varP3)
+        values ("Kickers", 1, 4, 3, 2, 4);/;
+    my $sth = $dbh->prepare($sql);
+    $sth->execute();
+    $label->set_label( "Created default entries " );
 }
 
 sub tableDrop {
-    my $sql = qq/DROP TABLE IF EXISTS Locale, Players, Teams;/;
+    my $sql = qq/DROP TABLE Locale, Players, Teams;/;
     my $sth = $dbh->prepare($sql);
+    #$sth->bind_param(1,"Locale");
+    #$sth->bind_param(2,"Players");
+    #$sth->bind_param(3,"Teams");
     $sth->execute();
-    tableCreate();
-    $label->set_label( "Table DROPPED and recreated" );
+    #tableCreate();
+    $label->set_label( "Tables DROPPED and recreated" );
 }    
 
 sub tablePrint {
-    my $sql = qq/SELECT * FROM Address/;
+    my $p1 = @_[1]; 
+    my $sql = qq/SELECT * FROM ?/;
     my $sth = $dbh->prepare($sql);
+    $sth->bind_param(1, $p1);
     $sth->execute();
     my ($col1, $col2, $col3, $col4, $col5);
     $sth->bind_col(1, \$col1);
@@ -148,26 +170,4 @@ sub tablePrint {
     }   
     return TRUE;
 }
-# hello
-
-# Address Insert Subroutine
-# lpX = local param #X)
-#sub addrInsert {
-#    my $statement = "insert in to Address (addrStreet, addrCity, addrState, addrZip)
-#        values (?, ?, ?, ?)";
-#    my ($button, $lp0, $lp1, $lp2, $lp3) = @_;
-#    
-#    # prepare statement
-#    my $sth = $dbh->prepare ($statement);
-#    
-#    $sth->bind_param(1,$lp0);
-#    $sth->bind_param(2,$lp1);
-#    $sth->bind_param(3,$lp2);
-#    $sth->bind_param(4,$lp3);
-#    
-#    # do the thing
-#    $sth->execute() or die $DBI::errstrt;
-#    $sth->finish();
-#    $dbh->disconnect();
-#}
 
