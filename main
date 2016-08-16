@@ -7,7 +7,6 @@ use DBI;
 use strict;
 use warnings;
 use diagnostics;
-#use feature ':5:14';
 use Gtk3 '-init';
 use Glib qw/TRUE FALSE/;
 
@@ -16,6 +15,7 @@ use Glib qw/TRUE FALSE/;
 my $dbh = DBI->connect('DBI:mysql:db_dev0:localhost','dbdev','dbdev');
 # label var
 my $label = "var label not set";
+my $vbox = "";
 
 
 windisplay();
@@ -29,6 +29,7 @@ sub windisplay {
     $window->set_border_width(20);
     $window->signal_connect (delete_event => sub { Gtk3->main_quit });
     
+    # set up buttons and their functions
     my $button1 = Gtk3::Button->new("Quit");
     $button1->signal_connect (clicked => \&quitFunction);
 
@@ -44,6 +45,7 @@ sub windisplay {
     my $button5 = Gtk3::Button->new("Get Table");
     $button5->signal_connect (clicked => \&tablePrint, "Players");
 
+    # set up horizontal box
     my $hbox = Gtk3::Box->new("horizontal", 5);
     $hbox->set_homogeneous (TRUE);
     $hbox->pack_start($button1, TRUE, TRUE, 0);
@@ -52,10 +54,12 @@ sub windisplay {
     $hbox->pack_start($button4, TRUE, TRUE, 0);
     $hbox->pack_start($button5, TRUE, TRUE, 0);
     
-
-    my $vbox = Gtk3::Box->new("vertical", 5);
+    # set up vertical superbox
+    $vbox = Gtk3::Box->new("vertical", 5);
+    # add horizontal box
     $vbox->add($hbox);
     
+    # set label & add
     $label = Gtk3::Label->new("Hi, welcome!");
     $vbox->add($label);
 
@@ -107,11 +111,18 @@ sub tableCreate {
         `varID`         int(11)         NOT NULL    auto_increment,
         `varName`       varchar(25)     NOT NULL    default '',
         `varHome`       int(11)         NOT NULL    default 0,
-        `varP0`         int(11)         NOT NULL    default 0,
-        `varP1`         int(11)         NOT NULL    default 0,
-        `varP2`         int(11)         NOT NULL    default 0,
-        `varP3`         int(11)         NOT NULL    default 0,
         PRIMARY KEY (`varID`)
+        );/;
+        my $sth = $dbh->prepare($sql);
+        $sth->execute;
+    }
+    sub tableCreateRosters {
+        my $sql = qq/CREATE TABLE `Rosters` (
+        `transID`       int(11)         NOT NULL    auto_increment,
+        `playerID`      int(11)         NOT NULL    default 0,
+        `teamID`        int(11)         NOT NULL    default 0,   
+        `rosterSpot`    int(11)         NOT NULL    default 0,
+        PRIMARY KEY (`transID`)
         );/;
         my $sth = $dbh->prepare($sql);
         $sth->execute;
@@ -119,28 +130,46 @@ sub tableCreate {
     tableCreateLocale();
     tableCreatePlayers();
     tableCreateTeams();
+    tableCreateRosters();
     $label->set_label( "Tables created" );
     return TRUE;
 }
 
 sub tableLineCreate {
-    my $sql = qq/INSERT INTO Locale (varName, varDefMod, varOffMod, varMidMod, varGKMod)
-        values ("Columbus", 4, 3, 2, 2);/;
-    my $sth = $dbh->prepare($sql);
-    $sth->execute();
-    my $sql = qq/INSERT INTO Players (varName, varHome, varDef, varOff, varMid, varGK)
-        values ("George", 1, 4, 3, 2, 4);/;
-    my $sth = $dbh->prepare($sql);
-    $sth->execute();
-    my $sql = qq/INSERT INTO Teams (varName, varHome, varP0, varP1, varP2, varP3)
-        values ("Kickers", 1, 4, 3, 2, 4);/;
-    my $sth = $dbh->prepare($sql);
-    $sth->execute();
+    sub lineCreateLocale {
+        my $sql = qq/INSERT INTO Locale (varName, varDefMod, varOffMod, varMidMod, varGKMod)
+            values ("Columbus", 4, 3, 2, 2);/;
+        my $sth = $dbh->prepare($sql);
+        $sth->execute();
+    }
+    sub lineCreatePlayers {
+        my $sql = qq/INSERT INTO Players (varName, varHome, varDef, varOff, varMid, varGK)
+            values ("George", 1, 4, 3, 2, 4);/;
+        my $sth = $dbh->prepare($sql);
+        $sth->execute();
+    }
+    sub lineCreateTeams {
+        my $sql = qq/INSERT INTO Teams (varName, varHome)
+            values ("Kickers", 1);/;
+        my $sth = $dbh->prepare($sql);
+        $sth->execute();
+    }
+    sub lineCreateRosters {
+        my $sql = qq/INSERT INTO Rosters (playerID, teamID, rosterSpot)
+            values (1, 1, 1);/;
+        my $sth = $dbh->prepare($sql);
+        $sth->execute();
+    }
+    lineCreateLocale();
+    lineCreatePlayers();
+    lineCreateTeams();
+    lineCreateRosters();
+    
     $label->set_label( "Created default entries " );
 }
-
+    
 sub tableDrop {
-    my $sql = qq/DROP TABLE Locale, Players, Teams;/;
+    my $sql = qq/DROP TABLE Locale, Players, Teams, Rosters;/;
     my $sth = $dbh->prepare($sql);
     #$sth->bind_param(1,"Locale");
     #$sth->bind_param(2,"Players");
@@ -152,9 +181,8 @@ sub tableDrop {
 
 sub tablePrint {
     my $p1 = @_[1]; 
-    my $sql = qq/SELECT * FROM ?/;
+    my $sql = qq/SELECT * FROM $p1/;
     my $sth = $dbh->prepare($sql);
-    $sth->bind_param(1, $p1);
     $sth->execute();
     my ($col1, $col2, $col3, $col4, $col5);
     $sth->bind_col(1, \$col1);
@@ -163,7 +191,7 @@ sub tablePrint {
     $sth->bind_col(4, \$col4);
     $sth->bind_col(5, \$col5);
     while ($sth->fetch) {
-        $label->set_label( "Street: $col2, City: $col3, State: $col4, Zip: $col5" );
+        $label->set_label( "ID: $col1, Name: $col2, $col3, $col4, $col5" );
     }
     if (!$col1){
     $label->set_label( "Nothing in table." );
