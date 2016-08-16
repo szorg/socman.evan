@@ -1,0 +1,150 @@
+#!/usr/bin/perl
+# Evan Miller 8/16/16
+# Conglomerate perl DB IO functions in to an application
+
+# includes
+use DBI;
+use strict;
+use warnings;
+use diagnostics;
+#use feature ':5:14';
+use Gtk3 '-init';
+use Glib qw/TRUE FALSE/;
+
+## global vars
+# database handler
+my $dbh = DBI->connect('DBI:mysql:db_dev0:localhost','dbdev','dbdev');
+# label var
+my $label = "var label not set";
+
+windisplay();
+
+sub windisplay {
+    # set up window
+    my $window = Gtk3::Window->new('toplevel');
+    $window->set_title("Dev Box");
+    $window->set_position("center");
+    $window->set_default_size(400,300);
+    $window->set_border_width(20);
+    $window->signal_connect (delete_event => sub { Gtk3->main_quit });
+    
+    my $button1 = Gtk3::Button->new("Quit");
+    $button1->signal_connect (clicked => \&quit_function);
+
+    my $button2 = Gtk3::Button->new("Create Table");
+    $button2->signal_connect (clicked => \&tableCreate);
+
+    my $button3 = Gtk3::Button->new("Insert Line");
+    $button3->signal_connect (clicked => \&tableLineCreate);
+
+    my $button4 = Gtk3::Button->new("DROP Table");
+    $button4->signal_connect (clicked => \&tableDrop);
+
+    my $button5 = Gtk3::Button->new("Get Table");
+    $button5->signal_connect (clicked => \&tablePrint);
+
+    my $hbox = Gtk3::Box->new("horizontal", 5);
+    $hbox->set_homogeneous (TRUE);
+    $hbox->pack_start($button1, TRUE, TRUE, 0);
+    $hbox->pack_start($button2, TRUE, TRUE, 0);
+    $hbox->pack_start($button3, TRUE, TRUE, 0);
+    $hbox->pack_start($button4, TRUE, TRUE, 0);
+    $hbox->pack_start($button5, TRUE, TRUE, 0);
+    
+
+    my $vbox = Gtk3::Box->new("vertical", 5);
+    $vbox->add($hbox);
+    
+    $label = Gtk3::Label->new("Hi, welcome!");
+    $vbox->add($label);
+
+    $window->add($vbox);
+
+    $window->show_all;
+
+
+    Gtk3->main;
+
+}
+
+sub quit_function {
+#    say "Exiting...";
+    Gtk3->main_quit;
+    return FALSE;
+}
+
+sub tableCreate {
+    my $sql = qq/CREATE TABLE `Address` (
+    `addrID`        int(11)         NOT NULL    auto_increment,
+    `addrStreet`    varchar(50)     NOT NULL    default '',
+    `addrCity`      varchar(25)     NOT NULL    default '',
+    `addrState`     char(2)         NOT NULL    default '',
+    `addrZIP`       char(10)        NOT NULL    default '',
+    PRIMARY KEY (`addrID`)
+);/;
+    my $sth = $dbh->prepare($sql);
+    $sth->execute;
+    $label->set_label( "Table created" );
+    return TRUE;
+}
+
+sub tableLineCreate {
+    my $sql = qq/INSERT INTO Address (addrStreet, addrCity, addrState, addrZip) 
+        values ("Lane", "Columbus", "OH", "43221");/;
+    my $sth = $dbh->prepare($sql);
+    $sth->execute();
+    $label->set_label( "Created basic address" );
+}
+
+sub tableDrop {
+    my $sql = qq/DROP TABLE Address;/;
+    my $sth = $dbh->prepare($sql);
+    $sth->execute();
+    tableCreate();
+    $label->set_label( "Table DROPPED and recreated" );
+}    
+
+sub tablePrint {
+    my $sql = qq/SELECT * FROM Address/;
+    my $sth = $dbh->prepare($sql);
+    $sth->execute();
+    my ($col1, $col2, $col3, $col4, $col5);
+    $sth->bind_col(1, \$col1);
+    $sth->bind_col(2, \$col2);
+    $sth->bind_col(3, \$col3);
+    $sth->bind_col(4, \$col4);
+    $sth->bind_col(5, \$col5);
+    if ($col1 ne "") {
+        while ($sth->fetch) {
+            $label->set_label( "Street: $col2, City: $col3, State: $col4, Zip: $col5" );
+        }
+    }
+    else {
+        $label->set_label( "Nothing in table." );
+    }
+
+    #$label->set_label( $exec );
+    return TRUE;
+}
+
+# Address Insert Subroutine
+# lpX = local param #X)
+#sub addrInsert {
+#    my $statement = "insert in to Address (addrStreet, addrCity, addrState, addrZip)
+#        values (?, ?, ?, ?)";
+#    my ($button, $lp0, $lp1, $lp2, $lp3) = @_;
+#    
+#    # prepare statement
+#    my $sth = $dbh->prepare ($statement);
+#    
+#    $sth->bind_param(1,$lp0);
+#    $sth->bind_param(2,$lp1);
+#    $sth->bind_param(3,$lp2);
+#    $sth->bind_param(4,$lp3);
+#    
+#    # do the thing
+#    $sth->execute() or die $DBI::errstrt;
+#    $sth->finish();
+#    $dbh->disconnect();
+#}
+
