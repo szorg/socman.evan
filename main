@@ -7,25 +7,81 @@ use DBI;
 use strict;
 use warnings;
 use diagnostics;
+use Glib 'TRUE', 'FALSE';
+use feature 'say';
+use Switch;
 
 ## global vars
 # database handler
 my $dbh = DBI->connect('DBI:mysql:db_dev0:localhost','dbdev','dbdev');
+my $numInput = 9;
+my $strInput = "";
+my $introd = 0;
+my $greeting = "Welcome to Socman!";
+my $mainFuncmenu = "1. Travel 
+2. Sign 
+3. Exhibition 
+4. Roster 
+5. Add Team
+6. Add Player
+7. Add Locale
+8. Table Create
+9. Table DROP
+10. Table Print
+0. Exit";
+my $loc = 1;
+my $team = 1;
 
 
-main();
 
-sub main {
+mainFunc();
 
+sub mainFunc {
+    while ($numInput != 0) {
+        if ($introd == 0) {
+            say $greeting;
+            $introd++;
+        }
+        say "$mainFuncmenu"; 
+        $numInput = <STDIN>;
+        chomp $numInput;
+        say "You chose $numInput";
+        switch ($numInput) {
+            case "1"    { doTravel() }
+            case "2"    { doSign() }
+            case "3"    { doExhib() }
+            case "4"    { printRoster() }
+            case "5"    { addTeam() }
+            case "6"    { addPlayer() }
+            case "7"    { addLocale() }
+            case "8"    { tableCreate() }
+            case "9"   { tableDrop() }
+            case "10"   { tablePrint() }
+            case "0"    { say "Goodybe!" }
+            else        { say "Try again." }
+        }
+    }
+    
+}
+sub doTravel {
+    
+}
+sub doSign {
+}
+sub doExhib {
+}
+sub printRoster {
+}
+sub addTeam {
+}
+sub addLocale {
 }
 
-sub quitFunction {
-    return FALSE;
-}
+
 
 sub tableCreate {
-    sub tableCreateLocale {
-        my $sql = qq/CREATE TABLE `Locale` (
+    sub tableCreateLocales {
+        my $sql = qq/CREATE TABLE `Locales` (
         `varID`         int(11)         NOT NULL    auto_increment,
         `varName`       varchar(50)     NOT NULL    default '',
         `varDefMod`     int(2)          NOT NULL    default 0,
@@ -72,7 +128,7 @@ sub tableCreate {
         my $sth = $dbh->prepare($sql);
         $sth->execute;
     }
-    tableCreateLocale();
+    tableCreateLocales();
     tableCreatePlayers();
     tableCreateTeams();
     tableCreateRosters();
@@ -80,8 +136,8 @@ sub tableCreate {
 }
 
 sub tableLineCreate {
-    sub lineCreateLocale {
-        my $sql = qq/INSERT INTO Locale (varName, varDefMod, varOffMod, varMidMod, varGKMod)
+    sub lineCreateLocales {
+        my $sql = qq/INSERT INTO Locales (varName, varDefMod, varOffMod, varMidMod, varGKMod)
             values ("Columbus", 4, 3, 2, 2);/;
         my $sth = $dbh->prepare($sql);
         $sth->execute();
@@ -89,10 +145,6 @@ sub tableLineCreate {
     sub lineCreatePlayers {
         my $sql = qq/INSERT INTO Players (varName, varHome, varDef, varOff, varMid, varGK)
             values ("Messi", 1, 9, 8, 7, 6);/;
-        my $sth = $dbh->prepare($sql);
-        $sth->execute();
-        my $sql = qq/INSERT INTO Players (varName, varHome, varDef, varOff, varMid, varGK)
-            values ("Ronaldo", 1, 8, 7, 6, 7);/;
         my $sth = $dbh->prepare($sql);
         $sth->execute();
     }
@@ -108,7 +160,7 @@ sub tableLineCreate {
         my $sth = $dbh->prepare($sql);
         $sth->execute();
     }
-    lineCreateLocale();
+    lineCreateLocales();
     lineCreatePlayers();
     lineCreateTeams();
     lineCreateRosters();
@@ -116,18 +168,31 @@ sub tableLineCreate {
 }
     
 sub tableDrop {
-    my $sql = qq/DROP TABLE Locale, Players, Teams, Rosters;/;
+    say "Which tables? ALL for all.";
+    my $strInput = <STDIN>;
+    my $sql = "";
+    chomp $strInput;
+    if ($strInput eq "ALL"){
+        say "Dropping ALL tables";
+        $sql = qq/DROP TABLE Locales, Players, Teams, Rosters;/;
+    } else {
+        say "Dropping table $strInput";
+        $sql = qq/DROP TABLE $strInput;/;
+    }
     my $sth = $dbh->prepare($sql);
-    #$sth->bind_param(1,"Locale");
-    #$sth->bind_param(2,"Players");
-    #$sth->bind_param(3,"Teams");
     $sth->execute();
-    #tableCreate();
-    $label->set_label( "Tables DROPPED and recreated" );
+    say "Tables DROPPED";
 }    
 
 sub tablePrint {
-    my $p1 = @_[1]; 
+    my $p1 = "";
+    if (!$_[0]) {
+        say "Print which table?";
+        $p1 = <STDIN>; 
+    } else {
+        $p1 = $_[0];
+    }
+    chomp $p1;
     my $sql = qq/SELECT * FROM $p1/;
     my $sth = $dbh->prepare($sql);
     $sth->execute();
@@ -139,10 +204,10 @@ sub tablePrint {
     $sth->bind_col(5, \$col5);
     $sth->bind_col(6, \$col6);
     while ($sth->fetch) {
-    print "ID: $col1, Name: $col2, Def: $col3, Off: $col4, Mid: $col5, GK: $col6";
+    say "ID: $col1, Name: $col2, Def: $col3, Off: $col4, Mid: $col5, GK: $col6";
     }
     if (!$col1){
-    print "Nothing in table.";
+    say "Nothing in table.";
     }   
     return TRUE;
 }
