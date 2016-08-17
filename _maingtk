@@ -7,19 +7,70 @@ use DBI;
 use strict;
 use warnings;
 use diagnostics;
+use Gtk3 '-init';
+use Glib qw/TRUE FALSE/;
 
 ## global vars
 # database handler
 my $dbh = DBI->connect('DBI:mysql:db_dev0:localhost','dbdev','dbdev');
+# label var
+my $label = "var label not set";
+my $vbox = "";
 
 
-main();
+windisplay();
 
-sub main {
+sub windisplay {
+    # set up window
+    my $window = Gtk3::Window->new('toplevel');
+    $window->set_title("Dev Box");
+    $window->set_position("center");
+    $window->set_default_size(400,300);
+    $window->set_border_width(20);
+    $window->signal_connect (delete_event => sub { Gtk3->main_quit });
+    
+    # set up buttons and their functions
+    my $button1 = Gtk3::Button->new("Quit");
+    $button1->signal_connect (clicked => \&quitFunction);
+    my $button2 = Gtk3::Button->new("Create Table");
+    $button2->signal_connect (clicked => \&tableCreate);
+    my $button3 = Gtk3::Button->new("Insert Line");
+    $button3->signal_connect (clicked => \&tableLineCreate);
+    my $button4 = Gtk3::Button->new("DROP Table");
+    $button4->signal_connect (clicked => \&tableDrop);
+    my $button5 = Gtk3::Button->new("Get Table");
+    $button5->signal_connect (clicked => \&tablePrint, "Players");
+
+    # set up horizontal box
+    my $hbox = Gtk3::Box->new("horizontal", 5);
+    $hbox->set_homogeneous (TRUE);
+    $hbox->pack_start($button1, TRUE, TRUE, 0);
+    $hbox->pack_start($button2, TRUE, TRUE, 0);
+    $hbox->pack_start($button3, TRUE, TRUE, 0);
+    $hbox->pack_start($button4, TRUE, TRUE, 0);
+    $hbox->pack_start($button5, TRUE, TRUE, 0);
+    
+    # set up vertical superbox
+    $vbox = Gtk3::Box->new("vertical", 5);
+    # add horizontal box
+    $vbox->add($hbox);
+    
+    # set label & add
+    $label = Gtk3::Label->new("Hi, welcome!");
+    $vbox->add($label);
+
+    $window->add($vbox);
+
+    $window->show_all;
+
+
+    Gtk3->main;
 
 }
 
 sub quitFunction {
+#    say "Exiting...";
+    Gtk3->main_quit;
     return FALSE;
 }
 
@@ -76,6 +127,7 @@ sub tableCreate {
     tableCreatePlayers();
     tableCreateTeams();
     tableCreateRosters();
+    $label->set_label( "Tables created" );
     return TRUE;
 }
 
@@ -112,7 +164,8 @@ sub tableLineCreate {
     lineCreatePlayers();
     lineCreateTeams();
     lineCreateRosters();
-    return TRUE;
+    
+    $label->set_label( "Created default entries " );
 }
     
 sub tableDrop {
@@ -139,10 +192,10 @@ sub tablePrint {
     $sth->bind_col(5, \$col5);
     $sth->bind_col(6, \$col6);
     while ($sth->fetch) {
-    print "ID: $col1, Name: $col2, Def: $col3, Off: $col4, Mid: $col5, GK: $col6";
+        $label->set_label( "ID: $col1, Name: $col2, Def: $col3, Off: $col4, Mid: $col5, GK: $col6" );
     }
     if (!$col1){
-    print "Nothing in table.";
+    $label->set_label( "Nothing in table." );
     }   
     return TRUE;
 }
