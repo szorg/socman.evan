@@ -19,13 +19,14 @@ my $strInput = "";
 my $introd = 0;
 my $greeting = "Welcome to Socman!";
 my $mainFuncmenu = "1. Travel 
-2. Sign 
+2. Transfer 
 3. Exhibition 
 4. Roster 
 5. Add Team
 6. Add Player
 7. Add Locale
 8. Table Create
+81. Table Line Create
 9. Table DROP
 10. Table Print
 0. Exit";
@@ -48,13 +49,14 @@ sub mainFunc {
         say "You chose $numInput";
         switch ($numInput) {
             case "1"    { doTravel() }
-            case "2"    { doSign() }
+            case "2"    { doTransfer() }
             case "3"    { doExhib() }
             case "4"    { printRoster() }
             case "5"    { addTeam() }
             case "6"    { addPlayer() }
             case "7"    { addLocale() }
             case "8"    { tableCreate() }
+            case "81"   { tableLineCreate() }
             case "9"   { tableDrop() }
             case "10"   { tablePrint() }
             case "0"    { say "Goodybe!" }
@@ -64,13 +66,132 @@ sub mainFunc {
     
 }
 sub doTravel {
-    
+    say "Current location: $loc"
+    if (!$_[0]{
+        say "Travel to what location?";
+        my $travelTo = <STDIN>;
+        chomp $travelTo;
+    } else {
+        my $travelTo = $_[0];
+        chomp $travelTo;
+        $loc = $travelTo;
+        say "Current location: $loc":
+    }
 }
-sub doSign {
+
+sub doTransfer {
+    # call function with doTransfer(player#,team#) or it will ask for missing info
+    my $player = 0;
+    my $team = 0;
+    if(!$_[0]){
+        say "Which player?";
+        $player = <STDIN>;
+    } else {
+        $player = $_[0];
+    }
+    if(!$_[1]){
+        say "To which team?"; 
+        $team = <STDIN>;
+    } else {
+        $player = $_[1];
+    }
+    chomp $player;
+    chomp $team;
+    say "Player: $player";
+    my $oldTeam = getTeam($player);
+    my $oldTrans = getTransFromPlayer($player);
+    say "Old Team: $oldTeam";
+    say "New Team: $team";
+    say "Old Trans ID: $oldTrans";
+    deleteTrans($oldTrans);
+    my $sql = qq/INSERT INTO Rosters (playerID, teamID) values ($player, $team)/;
+    my $sth = $dbh->prepare($sql);
+    $sth->execute;
+    my $newTeam = getTeam($player);
+    say "After exec, player is on: $newTeam";
 }
+
+sub deleteTrans {
+    my $trans = 0;
+    if (!$_[0]){
+        say "ERROR NO TRANS PROVIDED";
+    } else {
+        $trans = $_[0];
+        chomp $trans;
+        my $sql = qq/DELETE FROM Rosters WHERE transID = $trans/;
+        my $sth = $dbh->prepare($sql);
+        $sth->execute;
+    }
+}
+
+sub getTransFromPlayer {
+    my $player = 0;
+    my $trans = 0;
+    if (!$_[0]){
+        say "ERROR NO PLAYER FOR FUNC getTransFromPlayer";
+    } else {
+        $player = $_[0];
+        chomp $player;
+        my $sql = qq/SELECT transID FROM Rosters where playerID = $player/;
+        my $sth = $dbh->prepare($sql);
+        $sth->execute;
+        $sth->bind_col(1, \$trans);
+        while ($sth->fetch) {
+            return $trans;
+        }
+    }
+}
+     
 sub doExhib {
 }
 sub printRoster {
+    say "Which team?";
+    $numInput = <STDIN>;
+    chomp $numInput;
+    my $sql = qq/SELECT * FROM Rosters where teamID = $numInput/;
+}
+
+sub getTeam {
+    my $player = 0;
+    my $team = 0;
+    if (!$_[0]){
+        say "ERROR NO PLAYER FOR FUNC getTeam";
+    } else {
+        $player = $_[0];
+        chomp $player;
+        my $sql = qq/SELECT teamID FROM Rosters where playerID = $player/;
+        my $sth = $dbh->prepare($sql);
+        $sth->execute;
+        $sth->bind_col(1, \$team);
+        while ($sth->fetch) {
+            return $team;
+        }
+    }
+}
+     
+sub doExhib {
+}
+sub printRoster {
+    say "Which team?";
+    $numInput = <STDIN>;
+    chomp $numInput;
+    my $sql = qq/SELECT * FROM Rosters where teamID = $numInput/;
+    my $sth = $dbh->prepare($sql);
+    $sth->execute;
+    my ($col1, $col2, $col3);
+    $sth->bind_col(1, \$col1);
+    $sth->bind_col(2, \$col2);
+    $sth->bind_col(3, \$col3);
+    my $rows = $sth->rows;
+    my $count = 0;
+    if ($count < $rows){
+        say "Players: $rows";
+        while ($sth->fetch) {
+            say "TransID: $col1, PlayerID: $col2, TeamID: $col3";
+        }
+    } else {
+        say "No players found.";
+    }
 }
 sub addTeam {
 }
@@ -82,12 +203,12 @@ sub addLocale {
 sub tableCreate {
     sub tableCreateLocales {
         my $sql = qq/CREATE TABLE `Locales` (
-        `varID`         int(11)         NOT NULL    auto_increment,
-        `varName`       varchar(50)     NOT NULL    default '',
-        `varDefMod`     int(2)          NOT NULL    default 0,
-        `varOffMod`     int(2)          NOT NULL    default 0,
-        `varMidMod`     int(2)          NOT NULL    default 0,
-        `varGKMod`      int(2)          NOT NULL    default 0,
+        `varID`         int(11)         NOT NULL UNIQUE     auto_increment,
+        `varName`       varchar(50)     NOT NULL UNIQUE     default '',
+        `varDefMod`     int(2)          NOT NULL            default 0,
+        `varOffMod`     int(2)          NOT NULL            default 0,
+        `varMidMod`     int(2)          NOT NULL            default 0,
+        `varGKMod`      int(2)          NOT NULL            default 0,
         PRIMARY KEY (`varID`)
         );/;
         my $sth = $dbh->prepare($sql);
@@ -95,13 +216,13 @@ sub tableCreate {
     }
     sub tableCreatePlayers {
         my $sql = qq/CREATE TABLE `Players` (
-        `varID`         int(11)         NOT NULL    auto_increment,
-        `varName`       varchar(25)     NOT NULL    default '',
-        `varHome`       int(11)         NOT NULL    default 0,
-        `varDef`        int(3)          NOT NULL    default 0,
-        `varOff`        int(3)          NOT NULL    default 0,
-        `varMid`        int(3)          NOT NULL    default 0,
-        `varGK`         int(3)          NOT NULL    default 0,
+        `varID`         int(11)         NOT NULL UNIQUE     auto_increment,
+        `varName`       varchar(25)     NOT NULL            default '',
+        `varHome`       int(11)         NOT NULL            default 0,
+        `varDef`        int(3)          NOT NULL            default 0,
+        `varOff`        int(3)          NOT NULL            default 0,
+        `varMid`        int(3)          NOT NULL            default 0,
+        `varGK`         int(3)          NOT NULL            default 0,
         PRIMARY KEY (`varID`)
         );/;
         my $sth = $dbh->prepare($sql);
@@ -109,9 +230,9 @@ sub tableCreate {
     }
     sub tableCreateTeams {
         my $sql = qq/CREATE TABLE `Teams` (
-        `varID`         int(11)         NOT NULL    auto_increment,
-        `varName`       varchar(25)     NOT NULL    default '',
-        `varHome`       int(11)         NOT NULL    default 0,
+        `varID`         int(11)         NOT NULL UNIQUE     auto_increment,
+        `varName`       varchar(25)     NOT NULL UNIQUE     default '',
+        `varHome`       int(11)         NOT NULL            default 0,
         PRIMARY KEY (`varID`)
         );/;
         my $sth = $dbh->prepare($sql);
@@ -119,10 +240,10 @@ sub tableCreate {
     }
     sub tableCreateRosters {
         my $sql = qq/CREATE TABLE `Rosters` (
-        `transID`       int(11)         NOT NULL    auto_increment,
-        `playerID`      int(11)         NOT NULL    default 0,
-        `teamID`        int(11)         NOT NULL    default 0,   
-        `rosterSpot`    int(11)         NOT NULL    default 0,
+        `transID`       int(11)         NOT NULL UNIQUE     auto_increment,
+        `playerID`      int(11)         NOT NULL UNIQUE     default 0,
+        `teamID`        int(11)         NOT NULL            default 0,   
+        `rosterSpot`    int(11)         NOT NULL            default 0,
         PRIMARY KEY (`transID`)
         );/;
         my $sth = $dbh->prepare($sql);
@@ -185,15 +306,15 @@ sub tableDrop {
 }    
 
 sub tablePrint {
-    my $p1 = "";
+    my $strInput = "";
     if (!$_[0]) {
         say "Print which table?";
-        $p1 = <STDIN>; 
+        $strInput = <STDIN>; 
     } else {
-        $p1 = $_[0];
+        $strInput = $_[0];
     }
-    chomp $p1;
-    my $sql = qq/SELECT * FROM $p1/;
+    chomp $strInput;
+    my $sql = qq/SELECT * FROM $strInput/;
     my $sth = $dbh->prepare($sql);
     $sth->execute();
     my ($col1, $col2, $col3, $col4, $col5, $col6);
