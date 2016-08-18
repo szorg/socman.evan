@@ -18,18 +18,6 @@ my $numInput = 9;
 my $strInput = "";
 my $introd = 0;
 my $greeting = "Welcome to Socman!";
-my $mainFuncmenu = "1. Travel 
-2. Transfer 
-3. Exhibition 
-4. Roster 
-5. Add Team
-6. Add Player
-7. Add Locale
-8. Table Create
-81. Table Line Create
-9. Table DROP
-10. Table Print
-0. Exit";
 my $loc = 1;
 my $team = 1;
 
@@ -39,10 +27,26 @@ mainFunc();
 
 sub mainFunc {
     while ($numInput != 0) {
+        # if intro hasn't been given, give it now
         if ($introd == 0) {
             say $greeting;
             $introd++;
         }
+        # set up main menu
+        my $mainFuncmenu = "
+        1. Travel 
+        2. Transfer 
+        3. NOT IMPLEMENTED 
+        4. Roster 
+        5. Add Team
+        6. Add Player
+        7. Add Locale
+        8. Table Create
+        81. Table Line Create
+        9. Table DROP
+        10. Table Print
+        0. Exit";
+        # say the main menu, then do a switch case scenario to find out what they picked.
         say "$mainFuncmenu"; 
         $numInput = <STDIN>;
         chomp $numInput;
@@ -66,30 +70,31 @@ sub mainFunc {
     
 }
 sub doTravel {
-    say "Current location: $loc"
-    if (!$_[0]{
+    # change location from one site to another.
+    say "Traveling from: $loc";
+    my $travelTo = 0;
+    if (!$_[0]) {
         say "Travel to what location?";
-        my $travelTo = <STDIN>;
-        chomp $travelTo;
+        $travelTo = <STDIN>;
     } else {
-        my $travelTo = $_[0];
-        chomp $travelTo;
-        $loc = $travelTo;
-        say "Current location: $loc":
+        $travelTo = $_[0];
     }
+    $loc = $travelTo;
+    chomp $loc;
+    say "Traveled to: $loc";
 }
 
 sub doTransfer {
     # call function with doTransfer(player#,team#) or it will ask for missing info
     my $player = 0;
     my $team = 0;
-    if(!$_[0]){
+    if(!$_[0]) {
         say "Which player?";
         $player = <STDIN>;
     } else {
         $player = $_[0];
     }
-    if(!$_[1]){
+    if(!$_[1]) {
         say "To which team?"; 
         $team = <STDIN>;
     } else {
@@ -112,8 +117,9 @@ sub doTransfer {
 }
 
 sub deleteTrans {
+    # delete transaction
     my $trans = 0;
-    if (!$_[0]){
+    if (!$_[0]) {
         say "ERROR NO TRANS PROVIDED";
     } else {
         $trans = $_[0];
@@ -127,7 +133,7 @@ sub deleteTrans {
 sub getTransFromPlayer {
     my $player = 0;
     my $trans = 0;
-    if (!$_[0]){
+    if (!$_[0]) {
         say "ERROR NO PLAYER FOR FUNC getTransFromPlayer";
     } else {
         $player = $_[0];
@@ -142,19 +148,10 @@ sub getTransFromPlayer {
     }
 }
      
-sub doExhib {
-}
-sub printRoster {
-    say "Which team?";
-    $numInput = <STDIN>;
-    chomp $numInput;
-    my $sql = qq/SELECT * FROM Rosters where teamID = $numInput/;
-}
-
 sub getTeam {
     my $player = 0;
     my $team = 0;
-    if (!$_[0]){
+    if (!$_[0]) {
         say "ERROR NO PLAYER FOR FUNC getTeam";
     } else {
         $player = $_[0];
@@ -184,7 +181,7 @@ sub printRoster {
     $sth->bind_col(3, \$col3);
     my $rows = $sth->rows;
     my $count = 0;
-    if ($count < $rows){
+    if ($count < $rows) {
         say "Players: $rows";
         while ($sth->fetch) {
             say "TransID: $col1, PlayerID: $col2, TeamID: $col3";
@@ -193,9 +190,114 @@ sub printRoster {
         say "No players found.";
     }
 }
+
 sub addTeam {
+    my ($newTeamName, $newTeamHome);
+    if($_[0]) {
+        $newTeamName = $_[0];
+    } else {
+        say "New Team Name: ";
+        $newTeamName = <STDIN>;
+    }
+    if($_[1]) {
+        $newTeamHome = $_[1];
+    } else {
+        say "New Team Home ID: ";
+        $newTeamHome = <STDIN>;
+    }
+    chomp $newTeamName;
+    chomp $newTeamHome;
+    my $sql = qq/INSERT INTO Teams (varName, varHome) values ($newTeamName, $newTeamHome)/;
+    my $sth = $dbh->prepare($sql);
+    $sth->execute;
+    say "New team created!";
+    # TODO HERE: Get Team ID and do getTeamHome and getTeamName to print new data from DB
 }
+
+sub getTeamHome {
+    if ($_[0]) {
+        my $team = $_[0];
+    } else {
+        say "Get Home of which team ID?";
+        my $team = <STDIN>;
+    }
+    chomp $team;
+    my $sql = qq/SELECT varHome FROM Teams WHERE varID = $team/;
+    my $sth = $dbh->prepare($sql);
+    my $home = 0;
+    $sth->execute;
+    $sth->bind_col(1, \$home);
+    while ($sth->fetch) {
+        return $home;
+    }
+}
+        
+sub getTeamName {
+    if ($_[0]) {
+        my $team = $_[0];
+    } else {
+        say "Get Name of which team ID?";
+        my $team = <STDIN>;
+    }
+    chomp $team;
+    my $sql = qq/SELECT varName FROM Teams WHERE varID = $team/;
+    my $sth = $dbh->prepare($sql);
+    my $name = 0;
+    $sth->execute;
+    $sth->bind_col(1, \$name);
+    while ($sth->fetch) {
+        return $name;
+    }
+}
+
 sub addLocale {
+    # dec vars
+    my ($newLocName, $newDefMod, $newOffMod, $newMidMod, $newGKMod);
+    # Get Name
+    if($_[0]) {
+        $newLocName = $_[0];
+    } else {
+        say "New Loc Name: ";
+        $newLocName = <STDIN>;
+    }
+    # Get Def Mod
+    if($_[1]) {
+        $newDefMod = $_[1];
+    } else {
+        say "New Def Mod: ";
+        $newDefMod = <STDIN>;
+    }
+    # Get Off Mod
+    if($_[2]) {
+        $newOffMod = $_[2];
+    } else {
+        say "New Off Mod: ";
+        $newOffMod = <STDIN>;
+    }
+    # Get Mid Mod
+    if($_[3]) {
+        $newMidMod = $_[3];
+    } else {
+        say "New Mid Mod: ";
+        $newMidMod = <STDIN>;
+    }
+    # Get GK Mod
+    if($_[4]) {
+        $newGKMod = $_[4];
+    } else {
+        say "New GK Mod: ";
+        $newGKMod = <STDIN>;
+    }
+    chomp $newLocName;
+    chomp $newDefMod;
+    chomp $newOffMod;
+    chomp $newMidMod;
+    chomp $newGKMod;
+    my $sql = qq/INSERT INTO Locales (varName, varDefMod, varOffMod, varMidMod, varGKMod) values ($newLocName, $newDefMod, $newOffMod, $newMidMod, $newGKMod)/;
+    my $sth = $dbh->prepare($sql);
+    $sth->execute;
+    say "New Location created!";
+    # TODO HERE: Get Loc ID and do getLocHome and geteamName to print new data from DB
 }
 
 
@@ -293,7 +395,7 @@ sub tableDrop {
     my $strInput = <STDIN>;
     my $sql = "";
     chomp $strInput;
-    if ($strInput eq "ALL"){
+    if ($strInput eq "ALL") {
         say "Dropping ALL tables";
         $sql = qq/DROP TABLE Locales, Players, Teams, Rosters;/;
     } else {
@@ -327,7 +429,7 @@ sub tablePrint {
     while ($sth->fetch) {
     say "ID: $col1, Name: $col2, Def: $col3, Off: $col4, Mid: $col5, GK: $col6";
     }
-    if (!$col1){
+    if (!$col1) {
     say "Nothing in table.";
     }   
     return TRUE;
