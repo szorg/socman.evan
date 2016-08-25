@@ -207,11 +207,10 @@ sub addTeam {
     }
     chomp $newTeamName;
     chomp $newTeamHome;
-    my $sql = qq/INSERT INTO Teams (varName, varHome) values ($newTeamName, $newTeamHome)/;
+    my $sql = qq/INSERT INTO Teams (varName, varHome) values ("$newTeamName", $newTeamHome)/;
     my $sth = $dbh->prepare($sql);
     $sth->execute;
     say "New team created!";
-    # TODO HERE: Get Team ID and do getTeamHome and getTeamName to print new data from DB
 }
 
 sub getTeamHome {
@@ -293,7 +292,7 @@ sub addLocale {
     chomp $newOffMod;
     chomp $newMidMod;
     chomp $newGKMod;
-    my $sql = qq/INSERT INTO Locales (varName, varDefMod, varOffMod, varMidMod, varGKMod) values ($newLocName, $newDefMod, $newOffMod, $newMidMod, $newGKMod)/;
+    my $sql = qq/INSERT INTO Locales (varName, varDefMod, varOffMod, varMidMod, varGKMod) values ("$newLocName", $newDefMod, $newOffMod, $newMidMod, $newGKMod)/;
     my $sth = $dbh->prepare($sql);
     $sth->execute;
     say "New Location created!";
@@ -410,28 +409,69 @@ sub tableDrop {
 sub tablePrint {
     my $strInput = "";
     if (!$_[0]) {
+        say "Options are: Locales, Players, Teams, Rosters.";
         say "Print which table?";
         $strInput = <STDIN>; 
     } else {
         $strInput = $_[0];
     }
     chomp $strInput;
-    my $sql = qq/SELECT * FROM $strInput/;
-    my $sth = $dbh->prepare($sql);
-    $sth->execute();
     my ($col1, $col2, $col3, $col4, $col5, $col6);
-    $sth->bind_col(1, \$col1);
-    $sth->bind_col(2, \$col2);
-    $sth->bind_col(3, \$col3);
-    $sth->bind_col(4, \$col4);
-    $sth->bind_col(5, \$col5);
-    $sth->bind_col(6, \$col6);
-    while ($sth->fetch) {
-    say "ID: $col1, Name: $col2, Def: $col3, Off: $col4, Mid: $col5, GK: $col6";
+    if ($strInput eq "Locales"){
+        my $sql = qq/SELECT * FROM $strInput/;
+        my $sth = $dbh->prepare($sql);
+        $sth->execute();
+        my ($col1, $col2, $col3, $col4, $col5, $col6);
+        $sth->bind_col(1, \$col1);
+        $sth->bind_col(2, \$col2);
+        $sth->bind_col(3, \$col3);
+        $sth->bind_col(4, \$col4);
+        $sth->bind_col(5, \$col5);
+        $sth->bind_col(6, \$col6);
+        while ($sth->fetch) {
+            say "ID: $col1 Name: $col2, DefMod: $col3, OffMod: $col4, MidMod: $col5, GKMod: $col6";
+        }
     }
-    if (!$col1) {
-    say "Nothing in table.";
-    }   
-    return TRUE;
+    if ($strInput eq "Players"){
+        my $sql = qq/SELECT * FROM $strInput/;
+        my $sth = $dbh->prepare($sql);
+        $sth->execute();
+        my ($col1, $col2, $col3, $col4, $col5, $col6, $col7);
+        $sth->bind_col(1, \$col1);
+        $sth->bind_col(2, \$col2);
+        $sth->bind_col(3, \$col3);
+        $sth->bind_col(4, \$col4);
+        $sth->bind_col(5, \$col5);
+        $sth->bind_col(6, \$col6);
+        $sth->bind_col(7, \$col7);
+        while ($sth->fetch) {
+            say "ID: $col1 Name: $col2, Home: $col3, Def: $col4, Off: $col5, Mid: $col6, GK: $col7";
+        }
+    }
+    if ($strInput eq "Teams"){
+        my $sql = qq/SELECT * FROM $strInput/;
+        my $sth = $dbh->prepare($sql);
+        $sth->execute();
+        my ($col1, $col2, $col3);
+        $sth->bind_col(1, \$col1);
+        $sth->bind_col(2, \$col2);
+        $sth->bind_col(3, \$col3);
+        while ($sth->fetch) {
+            say "ID: $col1 Name: $col2, Home: $col3";
+        }
+    }
+    if ($strInput eq "Rosters"){
+        my $sql = qq/SELECT * FROM $strInput/;
+        my $sth = $dbh->prepare($sql);
+        $sth->execute();
+        my ($col1, $col2, $col3, $col4);
+        $sth->bind_col(1, \$col1);
+        $sth->bind_col(2, \$col2);
+        $sth->bind_col(3, \$col3);
+        $sth->bind_col(4, \$col4);
+        while ($sth->fetch) {
+            say "ID: $col1 PlayerID: $col2, TeamID: $col3, RosterSpot: $col4";
+        }
+    }
 }
 
